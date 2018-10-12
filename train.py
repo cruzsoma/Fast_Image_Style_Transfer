@@ -6,7 +6,7 @@ import os
 import model
 import time
 
-train_image_path = "train2014"
+train_image_path = "C:/Github/train2014"
 style_image = "img/mosaic.jpg"
 style_name = "mosaic"
 model_path = "models"
