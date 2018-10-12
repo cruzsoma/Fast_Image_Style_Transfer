@@ -7,8 +7,8 @@ import model
 import time
 
 train_image_path = "C:/Github/train2014"
-style_image = "img/mosaic.jpg"
-style_name = "mosaic"
+style_image = "img/starry.jpg"
+style_name = "starry"
 model_path = "models"
 loss_model = "vgg_16"
 loss_model_file = "pretrained/vgg_16.ckpt"
