@@ -26,7 +26,7 @@ image_size = 256
 batch_size = 4
 epoch = 2
 
-evaluate_test_image = "images/test3.jpg"
+evaluate_test_image = "images/test2.jpg"
 
 def gram(layer):
     shape = tf.shape(layer)

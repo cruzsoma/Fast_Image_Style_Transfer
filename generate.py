@@ -36,8 +36,6 @@ def evaluate(image_file, model_file, path=''):
             # read image data
             image_processing_fn, _ = preprocessing_factory.get_preprocessing(loss_model, is_training=False)
             image = get_image(image_file, height, width, image_processing_fn)
-            with open('generated/processed_content_image.jpg', 'wb') as img:
-                img.write(sess.run(tf.image.encode_jpeg(tf.cast(image, tf.uint8))))
 
             image = tf.expand_dims(image, 0)
 
