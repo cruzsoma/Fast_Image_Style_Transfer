@@ -7,8 +7,8 @@ import model
 import time
 from generate import evaluate
 
-train_image_path = "C:/Github/train2014"
-style_image = "img/starry.jpg"
+train_image_path = "C:/MachineLearning/TrainingData/train2014"
+style_image = "images/starry.jpg"
 style_name = "style1"
 model_path = "models"
 loss_model = "vgg_16"
@@ -26,7 +26,7 @@ image_size = 256
 batch_size = 4
 epoch = 2
 
-evaluate_test_image = "img/test3.jpg"
+evaluate_test_image = "images/test3.jpg"
 
 def gram(layer):
     shape = tf.shape(layer)

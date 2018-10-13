@@ -1,5 +1,5 @@
 train_image_path = "train2014"
-style_image = "img/mosaic.jpg"
+style_image = "images/mosaic.jpg"
 style_name = "mosaic"
 model_path = "models"
 loss_model = "vgg_16"

@@ -6,7 +6,7 @@ import os
 from consts import *
 
 style_model_file = "models/style1.ckpt-1400"
-content_image = "img/test2.jpg"
+content_image = "images/test2.jpg"
 
 def get_image(path, height, width, preprocess_fn):
     png = path.lower().endswith('png')
