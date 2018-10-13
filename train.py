@@ -8,7 +8,7 @@ import time
 
 train_image_path = "C:/Github/train2014"
 style_image = "img/starry.jpg"
-style_name = "starry"
+style_name = "style1"
 model_path = "models"
 loss_model = "vgg_16"
 loss_model_file = "pretrained/vgg_16.ckpt"
@@ -90,7 +90,8 @@ def get_style_features():
             save_path = 'generated/' + style_name + '.jpg'
             with open(save_path, 'wb') as f:
                 # todo
-                image_processed = tf.image.encode_jpeg(tf.cast(images[0, :], tf.uint8))
+                target_image = unprocessing_fn(images[0, :])
+                image_processed = tf.image.encode_jpeg(tf.cast(target_image, tf.uint8))
                 f.write(sess.run(image_processed))
                 tf.logging.info('Target style pattern is saved to: %s.' % save_path)
 
@@ -171,6 +172,7 @@ def main():
             for key in endpoints_dict:
                 tf.logging.info(key)
 
+            # calculate losses
             content_loss = calcu_content_loss(endpoints_dict, content_layers)
             style_loss, style_loss_summary = calcu_style_loss(endpoints_dict, style_features, style_layers)
             tv_loss = calcu_total_variation_loss(generated)
@@ -239,7 +241,7 @@ def main():
                         summary_str = sess.run(summary)
                         writer.add_summary(summary_str, step)
                         writer.flush()
-                    if step % 1000 == 0:
+                    if step % 500 == 0:
                         saver.save(sess, os.path.join(training_path, 'fast-style-model.ckpt'), global_step=step)
             except tf.errors.OutOfRangeError:
                 saver.save(sess, os.path.join(training_path, 'fast-style-model.ckpt-done'))

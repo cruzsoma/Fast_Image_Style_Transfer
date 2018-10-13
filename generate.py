@@ -6,8 +6,8 @@ import os
 from consts import *
 
 image_size = 512
-model_file = "models/fast-style-model.ckpt-1000"
-image_file = "img/SG1.jpg"
+model_file = "models/style1.ckpt-1000"
+image_file = "img/test3.jpg"
 
 def get_image(path, height, width, preprocess_fn):
     png = path.lower().endswith('png')
