@@ -5,6 +5,7 @@ from preprocessing import preprocessing_factory
 import os
 import model
 import time
+from generate import evaluate
 
 train_image_path = "C:/Github/train2014"
 style_image = "img/starry.jpg"
@@ -25,6 +26,7 @@ image_size = 256
 batch_size = 4
 epoch = 2
 
+evaluate_test_image = "img/test3.jpg"
 
 def gram(layer):
     shape = tf.shape(layer)
@@ -127,9 +129,20 @@ def calcu_total_variation_loss(image):
     loss = tf.nn.l2_loss(x) / tf.to_float(tf.size(x)) + tf.nn.l2_loss(y) / tf.to_float(tf.size(y))
     return loss
 
+def total_variation_loss(layer):
+    shape = tf.shape(layer)
+    height = shape[1]
+    width = shape[2]
+    y = tf.slice(layer, [0, 0, 0, 0], tf.stack([-1, height - 1, -1, -1])) - tf.slice(layer, [0, 1, 0, 0], [-1, -1, -1, -1])
+    x = tf.slice(layer, [0, 0, 0, 0], tf.stack([-1, -1, width - 1, -1])) - tf.slice(layer, [0, 0, 1, 0], [-1, -1, -1, -1])
+    loss = tf.nn.l2_loss(x) / tf.to_float(tf.size(x)) + tf.nn.l2_loss(y) / tf.to_float(tf.size(y))
+    return loss
+
 
 def read_images(path, preprocessing_fn, width, height, batch_size=4, epoch=2, shuffle=True):
     image_names = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+    if not shuffle:
+        image_names = sorted(image_names)
 
     is_png = image_names[0].lower().endswith('png')
     image_name_queue = tf.train.string_input_producer(image_names, shuffle=shuffle, num_epochs=epoch)
@@ -175,7 +188,7 @@ def main():
             # calculate losses
             content_loss = calcu_content_loss(endpoints_dict, content_layers)
             style_loss, style_loss_summary = calcu_style_loss(endpoints_dict, style_features, style_layers)
-            tv_loss = calcu_total_variation_loss(generated)
+            tv_loss = total_variation_loss(generated)
 
             loss = content_loss * content_weight + style_loss * style_weight + tv_loss * tv_weight
 
@@ -197,8 +210,11 @@ def main():
             tf.summary.image('origin', tf.stack([
                 unprocessing_fn(image) for image in tf.unstack(processed_images, axis=0, num=batch_size)
             ]))
+            tf.summary.image('processed', tf.stack([
+                image for image in tf.unstack(processed_images, axis=0, num=batch_size)
+            ]))
             summary = tf.summary.merge_all()
-            writer = tf.summary.FileWriter(training_path)
+            writer = tf.summary.FileWriter(training_path, sess.graph)
 
             """Prepare to Train"""
             global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -241,8 +257,9 @@ def main():
                         summary_str = sess.run(summary)
                         writer.add_summary(summary_str, step)
                         writer.flush()
-                    if step % 500 == 0:
+                    if step % 200 == 0:
                         saver.save(sess, os.path.join(training_path, 'fast-style-model.ckpt'), global_step=step)
+                        evaluate(evaluate_test_image, os.path.join(training_path, 'fast-style-model.ckpt' + '-' + str(step)), os.path.join(training_path, str(step) + '.jpg'))
             except tf.errors.OutOfRangeError:
                 saver.save(sess, os.path.join(training_path, 'fast-style-model.ckpt-done'))
                 tf.logging.info('Done training -- epoch limit reached')

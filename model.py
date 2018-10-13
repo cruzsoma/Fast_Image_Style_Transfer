@@ -62,7 +62,7 @@ def net(image, training):
     with tf.variable_scope('deconv2'):
         deconv2 = relu(instance_norm(resized_conv2d(deconv1, 64, 32, 3, 2, training)))
     with tf.variable_scope('deconv3'):
-        deconv3 = relu(instance_norm(resized_conv2d(deconv2, 32, 3, 9, 1, training)))
+        deconv3 = tf.nn.tanh(instance_norm(conv2d(deconv2, 32, 3, 9, 1)))
 
     y = (deconv3 + 1) * 127.5
 

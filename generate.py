@@ -5,9 +5,8 @@ import time
 import os
 from consts import *
 
-image_size = 512
-model_file = "models/style1.ckpt-1000"
-image_file = "img/test3.jpg"
+style_model_file = "models/style1.ckpt-1400"
+content_image = "img/test2.jpg"
 
 def get_image(path, height, width, preprocess_fn):
     png = path.lower().endswith('png')
@@ -16,6 +15,9 @@ def get_image(path, height, width, preprocess_fn):
     return preprocess_fn(image, height, width)
 
 def main(_):
+    evaluate(content_image, style_model_file)
+
+def evaluate(image_file, model_file, path=''):
     height = 0
     width = 0
     with open(image_file, 'rb') as img:
@@ -34,6 +36,8 @@ def main(_):
             # read image data
             image_processing_fn, _ = preprocessing_factory.get_preprocessing(loss_model, is_training=False)
             image = get_image(image_file, height, width, image_processing_fn)
+            with open('generated/processed_content_image.jpg', 'wb') as img:
+                img.write(sess.run(tf.image.encode_jpeg(tf.cast(image, tf.uint8))))
 
             image = tf.expand_dims(image, 0)
 
@@ -49,7 +53,11 @@ def main(_):
             model_abs_path = os.path.abspath(model_file)
             saver.restore(sess, model_abs_path)
 
-            generated_image = 'generated/result.jpg'
+            if path:
+                generated_image = path
+            else:
+                generated_image = 'generated/result.jpg'
+
             if os.path.exists('generated') is False:
                 os.makedirs('generated')
 
