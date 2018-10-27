@@ -4,9 +4,14 @@ import model
 import time
 import os
 from consts import *
+from tensorflow.python.framework import graph_util
+from tensorflow.python.platform import gfile
 
-style_model_file = "models/style1.ckpt-1400"
-content_image = "images/test2.jpg"
+style_model_file = "models/starry.ckpt-19200"
+content_image = "images/test1.jpg"
+pb_file_path = "models"
+output_height = 800
+output_width = 600
 
 def get_image(path, height, width, preprocess_fn):
     png = path.lower().endswith('png')
@@ -14,8 +19,97 @@ def get_image(path, height, width, preprocess_fn):
     image = tf.image.decode_png(img_bytes, channels=3) if png else tf.image.decode_jpeg(img_bytes, channels=3)
     return preprocess_fn(image, height, width)
 
+def read_pb_model():
+    height = 0
+    width = 0
+    test_img = []
+    with open(content_image, 'rb') as img:
+        with tf.Session().as_default() as sess:
+            if content_image.lower().endswith('png'):
+                test_img = sess.run(tf.image.decode_png(img.read()))
+            else:
+                test_img = sess.run(tf.image.decode_jpeg(img.read()))
+            height = test_img.shape[0]
+            width = test_img.shape[1]
+
+    tf.logging.info('Image size: %dx%d' % (width, height))
+
+    with tf.Session() as sess:
+        with gfile.FastGFile(pb_file_path + '/test_model.pb', 'rb') as f:
+            graph_def = tf.GraphDef()
+            graph_def.ParseFromString(f.read())
+            sess.graph.as_default()
+            tf.import_graph_def(graph_def, name='')
+
+        # init
+        sess.run(tf.global_variables_initializer())
+
+        input_img = sess.graph.get_tensor_by_name('input_image:0')
+        generated_img = sess.graph.get_tensor_by_name('generated_image:0')
+
+        with open(pb_file_path + '/test_read_model_img.jpg', 'wb') as img:
+            # feed_dict = {input_img: test_img, input_h: height, input_w: width}
+            feed_dict = {input_img: test_img}
+            img.write(sess.run(tf.image.encode_jpeg(generated_img), feed_dict))
+
+
+def save_pb_model():
+    height = 0
+    width = 0
+    with open(content_image, 'rb') as img:
+        with tf.Session().as_default() as sess:
+            if content_image.lower().endswith('png'):
+                test_img = sess.run(tf.image.decode_png(img.read()))
+            else:
+                test_img = sess.run(tf.image.decode_jpeg(img.read()))
+            height = test_img.shape[0]
+            width = test_img.shape[1]
+
+    tf.logging.info('Image size: %dx%d' % (width, height))
+
+    # png = content_image.lower().endswith('png')
+    # img_bytes = tf.read_file(content_image)
+    # test_img = tf.image.decode_png(img_bytes, channels=3) if png else tf.image.decode_jpeg(img_bytes, channels=3)
+
+    with tf.Session(graph=tf.Graph()) as sess:
+        input_img = tf.placeholder(tf.float32, [None, None, 3], name="input_image")
+        # input_h = tf.placeholder(tf.int32, name="input_height")
+        # input_w = tf.placeholder(tf.int32, name="input_width")
+
+        # read image data
+        image_processing_fn, _ = preprocessing_factory.get_preprocessing(loss_model, is_training=False)
+        image = image_processing_fn(input_img, output_height, output_width)
+
+        image = tf.expand_dims(image, 0)
+
+        generated = model.net(image, training=False)
+        generated = tf.cast(generated, tf.uint8)
+
+        generated = tf.squeeze(generated, [0], name='generated_image')
+
+        # restore variables
+        saver = tf.train.Saver(tf.global_variables(), write_version=tf.train.SaverDef.V1)
+        sess.run([tf.global_variables_initializer(), tf.local_variables_initializer()])
+
+        model_abs_path = os.path.abspath(style_model_file)
+        saver.restore(sess, model_abs_path)
+
+        constant_graph = graph_util.convert_variables_to_constants(sess, sess.graph_def, ['generated_image'])
+
+        # 写入序列化的 PB 文件
+        with tf.gfile.FastGFile(pb_file_path + '/test_model.pb', mode='wb') as f:
+            f.write(constant_graph.SerializeToString())
+
+        with open(pb_file_path + '/test_model_img.jpg', 'wb') as img:
+            # feed_dict = {input_img: test_img, input_h: height, input_w: width}
+            feed_dict = {input_img: test_img}
+            img.write(sess.run(tf.image.encode_jpeg(generated), feed_dict))
+
+
 def main(_):
-    evaluate(content_image, style_model_file)
+    # save_pb_model()
+    read_pb_model()
+    # evaluate(content_image, style_model_file)
 
 def evaluate(image_file, model_file, path=''):
     height = 0

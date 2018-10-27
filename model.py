@@ -39,6 +39,7 @@ def residual(x, filters, kernel, strides):
         return residual
 
 def net(image, training):
+    # Less border effects when padding a little before passing through ..
     image = tf.pad(image, [[0, 0], [10, 10], [10, 10], [0, 0]], mode='REFLECT')
 
     with tf.variable_scope('conv1'):
@@ -57,11 +58,15 @@ def net(image, training):
         res4 = residual(res3, 128, 3, 1)
     with tf.variable_scope('res5'):
         res5 = residual(res4, 128, 3, 1)
+    # print(res5.get_shape())
     with tf.variable_scope('deconv1'):
+        # deconv1 = relu(instance_norm(conv2d_transpose(res5, 128, 64, 3, 2)))
         deconv1 = relu(instance_norm(resized_conv2d(res5, 128, 64, 3, 2, training)))
     with tf.variable_scope('deconv2'):
+        # deconv2 = relu(instance_norm(conv2d_transpose(deconv1, 64, 32, 3, 2)))
         deconv2 = relu(instance_norm(resized_conv2d(deconv1, 64, 32, 3, 2, training)))
     with tf.variable_scope('deconv3'):
+        # deconv_test = relu(instance_norm(conv2d(deconv2, 32, 32, 2, 1)))
         deconv3 = tf.nn.tanh(instance_norm(conv2d(deconv2, 32, 3, 9, 1)))
 
     y = (deconv3 + 1) * 127.5
