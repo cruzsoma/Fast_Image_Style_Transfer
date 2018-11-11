@@ -6,12 +6,13 @@ import os
 from consts import *
 from tensorflow.python.framework import graph_util
 from tensorflow.python.platform import gfile
+import numpy as np
 
-style_model_file = "models/starry.ckpt-19200"
-content_image = "images/test1.jpg"
+style_model_file = "models/metalgear.ckpt-5800"
+content_image = "images/test2.jpg"
 pb_file_path = "models"
-output_height = 800
-output_width = 600
+output_height = 256
+output_width = 256
 
 def get_image(path, height, width, preprocess_fn):
     png = path.lower().endswith('png')
@@ -46,7 +47,7 @@ def read_pb_model():
 
         input_img = sess.graph.get_tensor_by_name('input_image:0')
         generated_img = sess.graph.get_tensor_by_name('generated_image:0')
-
+        generated_img = tf.cast(generated_img, tf.uint8)
         with open(pb_file_path + '/test_read_model_img.jpg', 'wb') as img:
             # feed_dict = {input_img: test_img, input_h: height, input_w: width}
             feed_dict = {input_img: test_img}
@@ -73,6 +74,7 @@ def save_pb_model():
 
     with tf.Session(graph=tf.Graph()) as sess:
         input_img = tf.placeholder(tf.float32, [None, None, 3], name="input_image")
+
         # input_h = tf.placeholder(tf.int32, name="input_height")
         # input_w = tf.placeholder(tf.int32, name="input_width")
 
@@ -83,9 +85,10 @@ def save_pb_model():
         image = tf.expand_dims(image, 0)
 
         generated = model.net(image, training=False)
-        generated = tf.cast(generated, tf.uint8)
 
         generated = tf.squeeze(generated, [0], name='generated_image')
+
+        generated_uint8 = tf.cast(generated, tf.uint8)
 
         # restore variables
         saver = tf.train.Saver(tf.global_variables(), write_version=tf.train.SaverDef.V1)
@@ -94,22 +97,17 @@ def save_pb_model():
         model_abs_path = os.path.abspath(style_model_file)
         saver.restore(sess, model_abs_path)
 
-        constant_graph = graph_util.convert_variables_to_constants(sess, sess.graph_def, ['generated_image'])
-
-        # 写入序列化的 PB 文件
-        with tf.gfile.FastGFile(pb_file_path + '/test_model.pb', mode='wb') as f:
-            f.write(constant_graph.SerializeToString())
-
         with open(pb_file_path + '/test_model_img.jpg', 'wb') as img:
             # feed_dict = {input_img: test_img, input_h: height, input_w: width}
             feed_dict = {input_img: test_img}
-            img.write(sess.run(tf.image.encode_jpeg(generated), feed_dict))
+            img.write(sess.run(tf.image.encode_jpeg(generated_uint8), feed_dict))
 
+            constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, output_node_names=['generated_image'])
 
-def main(_):
-    # save_pb_model()
-    read_pb_model()
-    # evaluate(content_image, style_model_file)
+            # save model to pb file
+            with tf.gfile.FastGFile(pb_file_path + '/test_model.pb', mode='wb') as f:
+                f.write(constant_graph.SerializeToString())
+
 
 def evaluate(image_file, model_file, path=''):
     height = 0
@@ -161,6 +159,11 @@ def evaluate(image_file, model_file, path=''):
                 tf.logging.info('Elapsed time: %fs' % (end_time - start_time))
 
                 tf.logging.info('Done. Please check %s.' % generated_image)
+
+def main(_):
+    save_pb_model()
+    read_pb_model()
+    # evaluate(content_image, style_model_file)
 
 if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
