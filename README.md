@@ -10,5 +10,6 @@ just for practice.
 |<img src="https://github.com/cruzsoma/Fast_Image_Style_Transfer/blob/master/images/test2.jpg" width="300" />|<img src="https://github.com/cruzsoma/Fast_Image_Style_Transfer/blob/master/images/starry.jpg" width="300" />|<img src="https://github.com/cruzsoma/Fast_Image_Style_Transfer/blob/master/images/starry-test2.jpg" width="300" />|
 |<img src="https://github.com/cruzsoma/Fast_Image_Style_Transfer/blob/master/images/SG1.jpg" width="300" />|<img src="https://github.com/cruzsoma/Fast_Image_Style_Transfer/blob/master/images/mgs.jpg" width="300" />|<img src="https://github.com/cruzsoma/Fast_Image_Style_Transfer/blob/master/images/mgs-SG1.jpg" width="300" />|
 
-"generate.py" can transfer style for images.And Build a pb model to deployment;
-"train.py" can train a stylization network with specified style image. using [COCO dataset](http://msvocds.blob.core.windows.net/coco2014/train2014.zip)
+"generate.py" can transfer style for images.And Build a pb model to deployment.
+
+"train.py" can train a stylization network with specified style image. using [COCO dataset](http://msvocds.blob.core.windows.net/coco2014/train2014.zip).
